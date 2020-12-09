@@ -16,6 +16,7 @@ import update_steps
 from utils import batchify, get_batch, repackage_hidden
 from lstm import torch_lstm_to_custom
 
+
 parser = argparse.ArgumentParser(description='PyTorch PennTreeBank RNN/LSTM Language Model')
 parser.add_argument('--data', type=str,
                     help='location of the data corpus. Note: only PTB and Wiki-2 supported.')
@@ -65,6 +66,11 @@ parser.add_argument('--when', nargs="+", type=int, default=[-1],
                     help='When (which epochs) to multiply the learning rate by lrdecay - accepts multiple')
 parser.add_argument('--lr_decay', type=float, default=0.1, help='decay rate for learning rate')
 parser.add_argument('--save_every', type=int, default=100, help='How often to save the model.')
+
+#ADDED
+parser.add_argument('--logdir', default=".", type=str, help='location for logfiles')
+parser.add_argument('--logprefix', default="model", type=str, help="file identifier for logging")
+
 parser.set_defaults(no_cuda=False)
 
 update_steps.add_update_args(parser)
@@ -260,7 +266,7 @@ def train(args):
 
         total_loss += raw_loss
         eval_dict['avg_loss'] += raw_loss
-        eval_dict['avg_ppl'] += math.exp(raw_loss)
+        eval_dict['avg_ppl'] += math.exp(min(raw_loss, 30))
 
         optimizer.param_groups[0]['lr'] = lr2
         if batch % args.log_interval == 0 and batch > 0:
@@ -340,6 +346,15 @@ try:
                 os.remove(os.path.join(args.save, file_name))
         latest_checkpoint = "latest_checkpoint.e{}".format(epoch)
         model_save(args.save, latest_checkpoint)
+        
+        logfilename = args.logdir + args.logprefix + ".txt"
+        with open(logfilename, "a") as csvfile:
+            line = ','.join([str(epoch), str(math.exp(train_loss_nodrop)), str(math.exp(val_loss))])
+            line += '\n'
+            csvfile.write(line)
+
+
+
 
 
 except KeyboardInterrupt:

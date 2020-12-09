@@ -79,6 +79,8 @@ class RNNModel(nn.Module):
         self.decoder.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, input, hidden, use_dropout=True, return_h=False):
+        #hiddenstack = torch.stack(hidden[1],0)#ADDED
+        #hiddenparam = torch.nn.Parameter(hiddenstack)# ADDED
         if not use_dropout:
             if self.rnn_type == 'QRNN': raise NotImplementedError
         use_dropout = use_dropout and self.use_dropout
